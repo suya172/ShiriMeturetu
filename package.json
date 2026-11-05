@@ -1,0 +1,36 @@
+{
+  "name": "shirimeturetu",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "predev": "npm run copy:dict",
+    "build": "npm run copy:dict && vue-tsc -b && vite build",
+    "copy:dict": "node scripts/copy-dict.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "preview": "vite preview",
+    "postinstall": "npm run copy:dict"
+  },
+  "dependencies": {
+    "@headlessui/vue": "^1.7.23",
+    "@tailwindcss/vite": "^4.3.4",
+    "compromise": "^14.19.0",
+    "fflate": "^0.8.3",
+    "kuromoji": "^0.1.2",
+    "tailwindcss": "^4.3.4",
+    "vue": "^3.5.44"
+  },
+  "devDependencies": {
+    "@types/kuromoji": "^0.1.3",
+    "@types/node": "^24.19.2",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/tsconfig": "^0.9.1",
+    "path-browserify": "^1.0.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0",
+    "vue-tsc": "^3.3.14"
+  }
+}
