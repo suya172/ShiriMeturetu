@@ -20,11 +20,16 @@ const {
   errorMessage,
   isToastVisible,
   toastMessage,
+  isImageProcessing,
+  canShareWithFiles,
   executeShuffle,
   clearInput,
   copyToClipboard,
   shareToX,
   shareToMisskey,
+  downloadCard,
+  copyCardImage,
+  shareWithCardImage,
 } = useShiriMeturetu();
 </script>
 
@@ -57,9 +62,14 @@ const {
         <!-- 結果表示カード -->
         <ResultCard
           :result="generatedResult"
-          @copy="() => copyToClipboard()"
+          :can-share-with-files="canShareWithFiles"
+          :is-image-processing="isImageProcessing"
+          @copy-text="() => copyToClipboard()"
           @share-x="shareToX"
           @share-misskey="shareToMisskey"
+          @share-with-image="shareWithCardImage"
+          @download-image="downloadCard"
+          @copy-image="copyCardImage"
         />
       </main>
     </div>

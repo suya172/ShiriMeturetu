@@ -1,4 +1,9 @@
 import { computed, onMounted, ref } from 'vue';
+import {
+  copyCardImageToClipboard,
+  createCardFile,
+  downloadCardImage,
+} from '../services/imageGenerator';
 import { performStructurePreservingShuffle, validateWordCount, type ShuffleResult } from '../services/shuffle';
 import { kuromojiTokenizer } from '../services/tokenizer/kuromoji';
 
@@ -12,6 +17,8 @@ export function useShiriMeturetu() {
   const initError = ref<string | null>(null);
 
   const generatedResult = ref<ShuffleResult | null>(null);
+  const isImageProcessing = ref(false);
+  const canShareWithFiles = ref(false);
 
   // エラーモーダル管理
   const isErrorModalOpen = ref(false);
@@ -27,8 +34,18 @@ export function useShiriMeturetu() {
   const isCharLimitExceeded = computed(() => characterCount.value > MAX_CHAR_LIMIT);
   const isInputEmpty = computed(() => inputText.value.trim().length === 0);
 
-  // 辞書データの初期化
+  // 辞書データの初期化および Web Share API (ファイル添付) の対応確認
   onMounted(async () => {
+    // Web Share API でのファイル共有がサポートされているか確認
+    try {
+      if (typeof navigator !== 'undefined' && 'canShare' in navigator) {
+        const testFile = new File([''], 'test.png', { type: 'image/png' });
+        canShareWithFiles.value = navigator.canShare({ files: [testFile] });
+      }
+    } catch {
+      canShareWithFiles.value = false;
+    }
+
     try {
       isInitializing.value = true;
       await kuromojiTokenizer.init();
@@ -109,7 +126,7 @@ export function useShiriMeturetu() {
 
     try {
       await navigator.clipboard.writeText(textToCopy);
-      showToast('クリップボードにコピーしました！✨');
+      showToast('クリップボードにコピーしました！');
     } catch (err) {
       showToast('コピーに失敗しました。');
       console.error('クリップボードのコピーに失敗:', err);
@@ -153,6 +170,79 @@ export function useShiriMeturetu() {
     window.open(shareUrl.toString(), '_blank', 'noopener,noreferrer');
   };
 
+  // カード画像のダウンロード
+  const downloadCard = async () => {
+    const text = generatedResult.value?.text;
+    if (!text || isImageProcessing.value) return;
+
+    try {
+      isImageProcessing.value = true;
+      await downloadCardImage(text);
+      showToast('カード画像をダウンロードしました！');
+    } catch (err) {
+      console.error('画像ダウンロード失敗:', err);
+      showToast('画像の生成・保存に失敗しました');
+    } finally {
+      isImageProcessing.value = false;
+    }
+  };
+
+  // カード画像をクリップボードにコピー
+  const copyCardImage = async () => {
+    const text = generatedResult.value?.text;
+    if (!text || isImageProcessing.value) return;
+
+    try {
+      isImageProcessing.value = true;
+      const success = await copyCardImageToClipboard(text);
+      if (success) {
+        showToast('カード画像をコピーしました！投稿欄に貼り付け(Ctrl+V)できます');
+      } else {
+        // 非対応環境
+        await downloadCardImage(text);
+        showToast('画像コピー非対応のため、画像を保存しました！');
+      }
+    } catch (err) {
+      console.error('画像コピー失敗:', err);
+      showToast('画像のコピーに失敗しました');
+    } finally {
+      isImageProcessing.value = false;
+    }
+  };
+
+  // Web Share API による画像添付付きシェア（対応端末・スマホ等）
+  const shareWithCardImage = async () => {
+    const text = generatedResult.value?.text;
+    if (!text || isImageProcessing.value) return;
+
+    try {
+      isImageProcessing.value = true;
+      const file = await createCardFile(text);
+      const shareData: ShareData = {
+        title: 'しりめつれつ',
+        text: getShareText(),
+        files: [file],
+      };
+
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // フォールバック: 画像を保存してXシェア
+        await downloadCardImage(text);
+        showToast('画像を保存しました。投稿に画像を添付してください！');
+        shareToX();
+      }
+    } catch (err: any) {
+      // ユーザーによるキャンセル以外でエラーの場合
+      if (err?.name !== 'AbortError') {
+        console.error('共有エラー:', err);
+        showToast('共有に失敗しました');
+      }
+    } finally {
+      isImageProcessing.value = false;
+    }
+  };
+
   return {
     inputText,
     characterCount,
@@ -167,10 +257,15 @@ export function useShiriMeturetu() {
     errorMessage,
     isToastVisible,
     toastMessage,
+    isImageProcessing,
+    canShareWithFiles,
     executeShuffle,
     clearInput,
     copyToClipboard,
     shareToX,
     shareToMisskey,
+    downloadCard,
+    copyCardImage,
+    shareWithCardImage,
   };
 }
