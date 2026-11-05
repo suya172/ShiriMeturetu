@@ -116,12 +116,6 @@ export function useShiriMeturetu() {
     }
   };
 
-  // シェア用フォーマット文字列の生成
-  const getShareText = () => {
-    const genText = generatedResult.value?.text || '';
-    return `${genText} #しりめつれつ`;
-  };
-
   // 安全な現在のURLを取得（http/httpsスキームのみ許可）
   const getSafeCurrentUrl = (): string => {
     try {
@@ -135,14 +129,20 @@ export function useShiriMeturetu() {
     return '';
   };
 
+  // シェア用フォーマット文字列の生成（テキスト、ハッシュタグ、リンクの間に改行）
+  const getShareText = () => {
+    const genText = generatedResult.value?.text || '';
+    const currentUrl = getSafeCurrentUrl();
+    if (currentUrl) {
+      return `${genText}\n#しりめつれつ\n${currentUrl}`;
+    }
+    return `${genText}\n#しりめつれつ`;
+  };
+
   // X（旧Twitter）シェア
   const shareToX = () => {
     const shareUrl = new URL('https://twitter.com/intent/tweet');
     shareUrl.searchParams.set('text', getShareText());
-    const currentUrl = getSafeCurrentUrl();
-    if (currentUrl) {
-      shareUrl.searchParams.set('url', currentUrl);
-    }
     window.open(shareUrl.toString(), '_blank', 'noopener,noreferrer');
   };
 
@@ -150,10 +150,6 @@ export function useShiriMeturetu() {
   const shareToMisskey = () => {
     const shareUrl = new URL('https://misskey-hub.net/share/');
     shareUrl.searchParams.set('text', getShareText());
-    const currentUrl = getSafeCurrentUrl();
-    if (currentUrl) {
-      shareUrl.searchParams.set('url', currentUrl);
-    }
     window.open(shareUrl.toString(), '_blank', 'noopener,noreferrer');
   };
 
