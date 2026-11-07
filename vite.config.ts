@@ -31,5 +31,11 @@ export default defineConfig({
   ],
   build: {
     sourcemap: false,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        animation: path.resolve(__dirname, 'animation.html'),
+      },
+    },
   },
 })
