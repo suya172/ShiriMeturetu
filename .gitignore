@@ -29,3 +29,5 @@ dist-ssr
 *.sw?
 SPEC.md
 public/dict/
+
+AGENTS.md
